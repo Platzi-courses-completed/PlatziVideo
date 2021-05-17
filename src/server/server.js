@@ -1,17 +1,18 @@
-import express from "express";
-import dotenv from "dotenv";
-import webpack from "webpack";
+/* eslint-disable global-require */
+import express from 'express';
+import dotenv from 'dotenv';
+import webpack from 'webpack';
 
 dotenv.config();
 
 const { ENV, PORT } = process.env;
 const app = express();
 
-if (ENV === "development") {
-  console.log("development config");
-  const webpackConfig = require("../../webpack.config");
-  const webpackDevMiddleware = require("webpack-dev-middleware");
-  const webpackHotMiddleware = require("webpack-hot-middleware");
+if (ENV === 'development') {
+  console.log('development config');
+  const webpackConfig = require('../../webpack.config');
+  const webpackDevMiddleware = require('webpack-dev-middleware');
+  const webpackHotMiddleware = require('webpack-hot-middleware');
   const compiler = webpack(webpackConfig);
   const serverConfig = { port: PORT, hot: true };
 
@@ -19,7 +20,7 @@ if (ENV === "development") {
   app.use(webpackHotMiddleware(compiler));
 }
 
-app.get("*", (req, res) => {
+app.get('*', (req, res) => {
   res.send(`
   <!DOCTYPE html>
     <html>
@@ -37,5 +38,5 @@ app.get("*", (req, res) => {
 
 app.listen(PORT, (err) => {
   if (err) console.log(err);
-  else console.log(`Server running on port 3000`);
+  else console.log('Server running on port 3000');
 });
