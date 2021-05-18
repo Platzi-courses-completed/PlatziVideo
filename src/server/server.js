@@ -33,6 +33,18 @@ if (ENV === 'development') {
   app.use(express.static(`${__dirname}/public`));
   app.use(helmet());
   app.use(helmet.permittedCrossDomainPolicies());
+  app.use(
+    helmet.contentSecurityPolicy({
+      directives: {
+        'default-src': ["'self'"],
+        'script-src': ["'self'", "'sha256-fqAyYQw90BvHA2X8Dgsi3fckwxSvBr0kTnVVFxqUOls='"],
+        'img-src': ["'self'", 'http://dummyimage.com'],
+        'style-src-elem': ["'self'", 'https://fonts.googleapis.com'],
+        'font-src': ['https://fonts.gstatic.com'],
+        'media-src': ['*'],
+      },
+    }),
+  );
   app.disable('x-powered-by');
 }
 
@@ -77,5 +89,5 @@ app.get('*', renderApp);
 
 app.listen(PORT, (err) => {
   if (err) console.log(err);
-  else console.log('Server running on port 3000');
+  else console.log(`Server running on port ${PORT}`);
 });
