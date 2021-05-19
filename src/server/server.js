@@ -2,6 +2,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import webpack from 'webpack';
+import helmet from 'helmet';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
@@ -12,6 +13,7 @@ import { StaticRouter } from 'react-router-dom';
 import serverRoutes from '../frontend/routes/serverRoutes';
 import reducer from '../frontend/reducers';
 import initialState from '../frontend/initialState';
+import getManifest from './getManifest';
 
 dotenv.config();
 
@@ -28,14 +30,34 @@ if (ENV === 'development') {
 
   app.use(webpackDevMiddleware(compiler, serverConfig));
   app.use(webpackHotMiddleware(compiler));
+} else {
+  app.use(express.static(`${__dirname}/public`));
+  app.use(helmet());
+  app.use(helmet.permittedCrossDomainPolicies());
+  app.use(
+    helmet.contentSecurityPolicy({
+      directives: {
+        'default-src': ["'self'"],
+        'script-src': ["'self'", "'sha256-fqAyYQw90BvHA2X8Dgsi3fckwxSvBr0kTnVVFxqUOls='"],
+        'img-src': ["'self'", 'http://dummyimage.com'],
+        'style-src-elem': ["'self'", 'https://fonts.googleapis.com'],
+        'font-src': ['https://fonts.gstatic.com'],
+        'media-src': ['*'],
+      },
+    }),
+  );
+  app.disable('x-powered-by');
 }
 
-const setResponse = (html, preloadedState) => {
+const setResponse = (html, preloadedState, manifest) => {
+  const mainStyles = manifest ? manifest['main.css'] : 'assets/app.css';
+  const mainBuild = manifest ? manifest['main.js'] : 'assets/app.js';
+
   return `
   <!DOCTYPE html>
     <html>
     <head>
-        <link rel="stylesheet" href="assets/app.css" type="text/css">
+        <link rel="stylesheet" href="${mainStyles}" type="text/css">
         <title>Platzi Video</title>
     </head>
     <body>
@@ -46,7 +68,7 @@ const setResponse = (html, preloadedState) => {
     '\\u003c',
   )}
         </script>
-        <script src="assets/app.js" type="text/javascript"></script>
+        <script src="${mainBuild}" type="text/javascript"></script>
     </body>
     </html>
   `;
@@ -63,12 +85,13 @@ const renderApp = (req, res) => {
     </Provider>,
   );
 
-  res.send(setResponse(html, preloadedState));
+  res.removeHeader('x-powered-by');
+  res.send(setResponse(html, preloadedState, getManifest()));
 };
 
 app.get('*', renderApp);
 
 app.listen(PORT, (err) => {
   if (err) console.log(err);
-  else console.log('Server running on port 3000');
+  else console.log(`Server running on port ${PORT}`);
 });
